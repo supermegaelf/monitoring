@@ -167,5 +167,5 @@ sudo systemctl start node_exporter
 docker compose -f /opt/monitoring/docker-compose.yml up -d
 
 echo "Done."
-echo "https://prometheus.$DOMAIN"
-echo "https://grafana.$DOMAIN"
+echo "Prometheus: https://prometheus.$DOMAIN"
+echo "Grafana: https://grafana.$DOMAIN"
