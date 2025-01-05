@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Запрос домена
-read -p "Введите ваш домен (например, grafana.example.com): " DOMAIN
+read -p "Введите ваш домен: " DOMAIN
 
 # Создание конфигурации для Grafana
 cat <<EOF > /etc/nginx/conf.d/grafana.conf
@@ -140,7 +140,7 @@ docker volume create prom_data
 
 # Установка Node Exporter
 cd /opt/monitoring/
-wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+wget -q https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
 tar xvf node_exporter-1.8.2.linux-amd64.tar.gz
 sudo cp node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin
 rm -rf node_exporter-1.8.2.linux-amd64 node_exporter-1.8.2.linux-amd64.tar.gz
@@ -183,4 +183,6 @@ sudo systemctl start node_exporter
 # Запуск Docker Compose
 docker compose -f /opt/monitoring/docker-compose.yml up -d
 
-echo "Установка завершена. Перейдите на https://grafana.$DOMAIN, https://prometheus.$DOMAIN или https://node-exporter.$DOMAIN для проверки."
+echo "https://prometheus.$DOMAIN"
+echo "https://grafana.$DOMAIN"
+echo "Done."
