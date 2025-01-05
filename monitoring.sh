@@ -3,9 +3,6 @@
 # Запрос домена
 read -p "Введите ваш домен (например, grafana.example.com): " DOMAIN
 
-# Получение текущего IP-адреса сервера
-SERVER_IP=$(hostname -I | awk '{print $1}')
-
 # Создание конфигурации для Grafana
 cat <<EOF > /etc/nginx/conf.d/grafana.conf
 server {
@@ -134,7 +131,7 @@ scrape_configs:
         - localhost:9090
   - job_name: base
     static_configs:
-      - targets: ['$SERVER_IP:9100']
+      - targets: ['localhost:9100']
 EOF
 
 # Создание volumes
@@ -171,7 +168,7 @@ WantedBy=multi-user.target
 EOF
 
 # Настройка UFW
-ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
+ufw allow from localhost to any port 9100 proto tcp comment "Node Exporter"
 ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 1"
 ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 2"
 
