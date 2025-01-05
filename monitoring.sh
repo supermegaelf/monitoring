@@ -172,6 +172,11 @@ EOF
 
 # Настройка UFW
 ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
+ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 1"
+ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 2"
+
+# Перезагрузка UFW для применения изменений
+ufw reload
 
 # Запуск Node Exporter
 sudo systemctl daemon-reload
