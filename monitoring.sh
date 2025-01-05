@@ -131,7 +131,7 @@ scrape_configs:
     scheme: http
     static_configs:
       - targets:
-        - $SERVER_IP:9090
+        - localhost:9090
   - job_name: base
     static_configs:
       - targets: ['$SERVER_IP:9100']
