@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Запрос домена
-read -p "Введите ваш домен (например, grafana.example.com): " DOMAIN
+read -p "Введите ваш домен (например, example.com): " DOMAIN
 
 # Получение текущего IP-адреса сервера
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -28,10 +28,8 @@ EOF
 # Создание конфигурации для Prometheus
 cat <<EOF > /etc/nginx/conf.d/prometheus.conf
 server {
-    server_name prometheus.$DOMAIN;
-
     listen 8444 ssl;
-    http2 on;
+    server_name prometheus.$DOMAIN;
 
     location / {
         proxy_pass http://127.0.0.1:9090;
@@ -49,10 +47,8 @@ EOF
 # Создание конфигурации для Node Exporter
 cat <<EOF > /etc/nginx/conf.d/node-exporter.conf
 server {
-    server_name node-exporter.$DOMAIN;
-
     listen 8444 ssl;
-    http2 on;
+    server_name node-exporter.$DOMAIN;
 
     location / {
         proxy_pass http://127.0.0.1:9100;
@@ -70,10 +66,6 @@ EOF
 # Проверка и перезапуск Nginx
 echo "Проверяем конфигурацию Nginx..."
 nginx -t && systemctl restart nginx
-
-# Установка Docker Compose
-echo "Устанавливаем Docker Compose..."
-apt install -y docker-compose
 
 # Создание папки для мониторинга
 mkdir -p /opt/monitoring/prometheus
@@ -119,20 +111,11 @@ alerting:
   alertmanagers:
     - static_configs:
       - targets: []
-      scheme: http
-      timeout: 10s
-      api_version: v2
 scrape_configs:
   - job_name: prometheus
-    honor_timestamps: true
-    scrape_interval: 15s
-    scrape_timeout: 10s
-    metrics_path: /metrics
-    scheme: http
     static_configs:
-      - targets:
-        - $SERVER_IP:9090
-  - job_name: base
+      - targets: ['$SERVER_IP:9090']
+  - job_name: node_exporter
     static_configs:
       - targets: ['$SERVER_IP:9100']
 EOF
@@ -164,14 +147,15 @@ Group=node_exporter
 Type=simple
 ExecStart=/usr/local/bin/node_exporter
 Restart=always
-RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 # Настройка UFW
-ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
+ufw allow from 45.131.41.0/24 to any port 9100 proto tcp comment "Node Exporter - Public Network"
+ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 1"
+ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 2"
 
 # Запуск Node Exporter
 sudo systemctl daemon-reload
