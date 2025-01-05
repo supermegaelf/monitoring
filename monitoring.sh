@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Запрос домена
-read -p "Введите ваш домен: " DOMAIN
+read -p "Введите домен: " DOMAIN
+
+# Получение текущего IP-адреса сервера
+SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Создание конфигурации для Grafana
 cat <<EOF > /etc/nginx/conf.d/grafana.conf
@@ -131,7 +134,7 @@ scrape_configs:
         - localhost:9090
   - job_name: base
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['$SERVER_IP:9100']
 EOF
 
 # Создание volumes
@@ -140,7 +143,7 @@ docker volume create prom_data
 
 # Установка Node Exporter
 cd /opt/monitoring/
-wget -q https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
 tar xvf node_exporter-1.8.2.linux-amd64.tar.gz
 sudo cp node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin
 rm -rf node_exporter-1.8.2.linux-amd64 node_exporter-1.8.2.linux-amd64.tar.gz
@@ -168,7 +171,7 @@ WantedBy=multi-user.target
 EOF
 
 # Настройка UFW
-ufw allow from localhost to any port 9100 proto tcp comment "Node Exporter"
+ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
 ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 1"
 ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 2"
 
@@ -183,6 +186,6 @@ sudo systemctl start node_exporter
 # Запуск Docker Compose
 docker compose -f /opt/monitoring/docker-compose.yml up -d
 
+echo "Done."
 echo "https://prometheus.$DOMAIN"
 echo "https://grafana.$DOMAIN"
-echo "Done."
