@@ -6,10 +6,6 @@ read -p "Введите ваш домен (например, grafana.example.com
 # Получение текущего IP-адреса сервера
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
-# Установка Nginx
-echo "Устанавливаем Nginx..."
-apt update && apt install -y nginx
-
 # Создание конфигурации для Grafana
 cat <<EOF > /etc/nginx/conf.d/grafana.conf
 server {
