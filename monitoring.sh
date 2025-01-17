@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -p "Enter primary domain for Grafana, Prometheus and Node Exporter: " DOMAIN
+read -p "Grafana, Prometheus and Node Exporter domain: " DOMAIN
 
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
