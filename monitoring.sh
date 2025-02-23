@@ -3,7 +3,7 @@
 # Запрос домена у пользователя
 read -p "Grafana, Prometheus and Node Exporter domain: " DOMAIN
 
-# Получение IP сервера
+# Получение IP сервера (оставляем для других целей, но не используем для ufw здесь)
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Создание конфигураций Nginx
@@ -93,8 +93,7 @@ services:
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    ports:
-      - 127.0.0.1:9090:9090
+    network_mode: host
     restart: unless-stopped
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -131,7 +130,7 @@ scrape_configs:
         - localhost:9090
   - job_name: base
     static_configs:
-      - targets: ['$SERVER_IP:9100']
+      - targets: ['127.0.0.1:9100']
 EOF
 
 # Создание Docker volumes
@@ -175,9 +174,9 @@ cd /opt/monitoring/
 docker compose -f /opt/monitoring/docker-compose.yml up -d
 
 # Настройка UFW после запуска сервисов
-ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
 ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 1"
 ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 2"
+ufw allow from 127.0.0.1 to any port 9100 proto tcp comment "Local Prometheus to Node Exporter"
 ufw reload
 
 # Проверка статуса сервисов
