@@ -1,9 +1,12 @@
 #!/bin/bash
 
+# Запрос домена у пользователя
 read -p "Grafana, Prometheus and Node Exporter domain: " DOMAIN
 
+# Получение IP сервера
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
+# Создание конфигураций Nginx
 cat <<EOF > /etc/nginx/conf.d/grafana.conf
 server {
     listen 8444 ssl;
@@ -62,9 +65,16 @@ server {
 }
 EOF
 
+# Проверка и перезапуск Nginx
 echo "Checking Nginx configuration..."
-nginx -t && systemctl restart nginx
+if nginx -t; then
+    systemctl restart nginx
+else
+    echo "Nginx configuration test failed. Please check /etc/nginx/conf.d/ files."
+    exit 1
+fi
 
+# Создание директории и файлов для мониторинга
 mkdir -p /opt/monitoring/prometheus
 
 cat <<EOF > /opt/monitoring/docker-compose.yml
@@ -124,9 +134,11 @@ scrape_configs:
       - targets: ['$SERVER_IP:9100']
 EOF
 
+# Создание Docker volumes
 docker volume create grafana-storage
 docker volume create prom_data
 
+# Установка Node Exporter
 cd /opt/monitoring/
 wget -q https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
 tar xvf node_exporter-1.8.2.linux-amd64.tar.gz
@@ -154,18 +166,29 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
-ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 1"
-ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter Docker Network 2"
-
-ufw reload
-
+# Запуск сервисов перед настройкой UFW
 sudo systemctl daemon-reload
 sudo systemctl enable node_exporter
 sudo systemctl start node_exporter
 
+cd /opt/monitoring/
 docker compose -f /opt/monitoring/docker-compose.yml up -d
 
+# Настройка UFW после запуска сервисов
+ufw allow from $SERVER_IP to any port 9100 proto tcp comment "Node Exporter"
+ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 1"
+ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 2"
+ufw reload
+
+# Проверка статуса сервисов
+if systemctl is-active node_exporter >/dev/null && docker ps | grep -q grafana && docker ps | grep -q prometheus; then
+    echo "All services are running."
+else
+    echo "Some services failed to start. Check 'systemctl status node_exporter' and 'docker ps' for details."
+    exit 1
+fi
+
+# Итоговое сообщение
 echo "Done."
 echo "Prometheus: https://prometheus.$DOMAIN"
 echo "Grafana: https://grafana.$DOMAIN"
