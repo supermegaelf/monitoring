@@ -168,6 +168,7 @@ docker compose -f /opt/monitoring/docker-compose.yml up -d
 ufw allow from 172.17.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 1"
 ufw allow from 172.18.0.0/16 to any port 9100 proto tcp comment "Node Exporter - Docker Network 2"
 ufw allow from 127.0.0.1 to any port 9100 proto tcp comment "Local Prometheus to Node Exporter"
+ufw allow from 127.0.0.1 to any port 9090 proto tcp comment "Local Prometheus Access"
 ufw reload
 
 if systemctl is-active node_exporter >/dev/null && docker ps | grep -q grafana && docker ps | grep -q prometheus; then
