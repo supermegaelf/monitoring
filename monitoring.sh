@@ -6,7 +6,7 @@ SERVER_IP=$(hostname -I | awk '{print $1}')
 
 cat <<EOF > /etc/nginx/conf.d/grafana.conf
 server {
-    listen 8444 ssl;
+    listen 443 ssl;
     server_name grafana.$DOMAIN;
 
     location / {
@@ -26,7 +26,7 @@ cat <<EOF > /etc/nginx/conf.d/prometheus.conf
 server {
     server_name prometheus.$DOMAIN;
 
-    listen 8444 ssl;
+    listen 443 ssl;
     http2 on;
 
     location / {
@@ -46,7 +46,7 @@ cat <<EOF > /etc/nginx/conf.d/node-exporter.conf
 server {
     server_name node-exporter.$DOMAIN;
 
-    listen 8444 ssl;
+    listen 443 ssl;
     http2 on;
 
     location / {
