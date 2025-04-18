@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -p "Grafana, Prometheus and Node Exporter domain: " DOMAIN
+read -p $'\033[32mGrafana, Prometheus and Node Exporter domain: \033[0m' DOMAIN
 
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
